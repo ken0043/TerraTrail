@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TerraTrail — 冒険ミニチュアマップジェネレーター</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Terra<span class="accent">Trail</span></h1>
+    <span class="subtitle">冒険の軌跡を Bambu H2C 用マルチカラー 3D マップに</span>
+  </div>
+</header>
+
+<main>
+  <aside class="panel left">
+
+    <!-- 1. Route input -->
+    <div class="section">
+      <h2><span class="num">1</span>ルート入力</h2>
+
+      <div class="mode-toggle">
+        <label><input type="radio" name="input-mode" value="gpx" checked> GPX ファイル</label>
+        <label><input type="radio" name="input-mode" value="manual"> 地図で描画</label>
+      </div>
+
+      <div id="gpx-mode" class="mode-panel">
+        <label>ファイルを選択
+          <input type="file" id="gpx-file" accept=".gpx,application/gpx+xml">
+        </label>
+      </div>
+
+      <div id="manual-mode" class="mode-panel hidden">
+        <p class="hint">マップタブの地図を<b>左クリック</b>して点を追加 (2 点以上)</p>
+        <div id="draw-status" class="draw-status">点数: 0</div>
+      </div>
+
+      <div style="display:flex; gap:0.4rem; margin-top:0.5rem;">
+        <button id="clear-route" type="button" style="flex:1">入力をクリア</button>
+      </div>
+    </div>
+
+    <!-- 2. Shape -->
+    <div class="section">
+      <h2><span class="num">2</span>マップ形状</h2>
+      <div class="shape-grid">
+        <label class="shape-option">
+          <input type="radio" name="shape" value="rectangle" checked>
+          <span class="glyph"><svg viewBox="0 0 28 28" width="28" height="28"><rect x="3" y="6" width="22" height="16" rx="1"/></svg></span>
+          <span>矩形</span>
+        </label>
+        <label class="shape-option">
+          <input type="radio" name="shape" value="square">
+          <span class="glyph"><svg viewBox="0 0 28 28" width="28" height="28"><rect x="5" y="5" width="18" height="18" rx="1"/></svg></span>
+          <span>正方形</span>
+        </label>
+        <label class="shape-option">
+          <input type="radio" name="shape" value="circle">
+          <span class="glyph"><svg viewBox="0 0 28 28" width="28" height="28"><circle cx="14" cy="14" r="10"/></svg></span>
+          <span>円形</span>
+        </label>
+        <label class="shape-option">
+          <input type="radio" name="shape" value="rounded">
+          <span class="glyph"><svg viewBox="0 0 28 28" width="28" height="28"><rect x="3" y="6" width="22" height="16" rx="5"/></svg></span>
+          <span>丸角</span>
+        </label>
+        <label class="shape-option">
+          <input type="radio" name="shape" value="hexagon">
+          <span class="glyph"><svg viewBox="0 0 28 28" width="28" height="28"><polygon points="14,3 24,9 24,19 14,25 4,19 4,9"/></svg></span>
+          <span>六角形</span>
+        </label>
+        <label class="shape-option">
+          <input type="radio" name="shape" value="octagon">
+          <span class="glyph"><svg viewBox="0 0 28 28" width="28" height="28"><polygon points="9,3 19,3 25,9 25,19 19,25 9,25 3,19 3,9"/></svg></span>
+          <span>八角形</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 3. Model mode -->
+    <div class="section">
+      <h2><span class="num">3</span>モデル構造</h2>
+      <div class="mode-toggle">
+        <label><input type="radio" name="model-mode" value="layered" checked> 層別立体</label>
+        <label><input type="radio" name="model-mode" value="single"> 単一立体</label>
+      </div>
+      <p class="hint" id="model-mode-hint">
+        <b>層別</b>: 標高ごとに別立体で全高に色が付く。見栄え重視。<br>
+        <b>単一</b>: 1つの立体+表面の薄い色キャップ。印刷時の色切替を大幅削減。
+      </p>
+      <label id="cap-depth-row" class="hidden" style="margin-top:0.5rem;">表面色の深さ (mm)
+        <input type="number" id="opt-cap" value="0.6" step="0.2" min="0.2" max="3">
+      </label>
+    </div>
+
+    <!-- 4. Frame -->
+    <div class="section">
+      <h2><span class="num">4</span>額縁</h2>
+      <div class="grid-2">
+        <label>スタイル
+          <select id="opt-frame">
+            <option value="none">なし</option>
+            <option value="auto" selected>自動</option>
+            <option value="simple">シンプル</option>
+            <option value="stepped">段差</option>
+          </select>
+        </label>
+        <label>幅 (mm)
+          <input type="number" id="opt-frame-w" value="6" step="0.5" min="2" max="20">
+        </label>
+      </div>
+    </div>
+
+    <!-- 5. Parameters -->
+    <div class="section">
+      <h2><span class="num">5</span>パラメータ</h2>
+      <div class="grid-2">
+        <label>モデル長辺 (mm)
+          <input type="number" id="opt-size" value="150" min="40" max="400">
+        </label>
+        <label>ベース厚 (mm)
+          <input type="number" id="opt-base" value="3" step="0.5" min="1" max="10">
+        </label>
+        <label>垂直倍率
+          <input type="number" id="opt-z" value="1" step="0.25" min="0.5" max="5">
+        </label>
+        <label>解像度
+          <input type="number" id="opt-grid" value="200" step="20" min="60" max="400">
+        </label>
+        <label>ルート幅 (mm)
+          <input type="number" id="opt-route-w" value="1.2" step="0.1" min="0.4" max="4">
+        </label>
+        <label>ルート高 (mm)
+          <input type="number" id="opt-route-h" value="1.0" step="0.1" min="0.3" max="3">
+        </label>
+        <label style="grid-column: 1 / -1;">DEM 取得元
+          <select id="opt-dem">
+            <option value="auto">自動（日本=GSI / 他=Terrarium）</option>
+            <option value="gsi">GSI（国土地理院）</option>
+            <option value="terrarium">AWS Terrarium</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <!-- 6. Layers -->
+    <div class="section">
+      <h2><span class="num">6</span>レイヤー</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="opt-route" checked> ルート</label>
+        <label><input type="checkbox" id="opt-rivers" checked> 河川</label>
+        <label><input type="checkbox" id="opt-buildings" checked> ビル（都市）</label>
+        <label><input type="checkbox" id="opt-sea" checked> 海・湾</label>
+        <label><input type="checkbox" id="opt-cities"> 都市マーカー</label>
+        <label><input type="checkbox" id="opt-peaks"> 山頂マーカー</label>
+      </div>
+      <p class="hint" style="margin-top:0.35rem;">
+        都市部エリアは「ビル」をON、海沿いエリアは「海・湾」をONにしてください。
+      </p>
+    </div>
+
+    <!-- 6b. Map area -->
+    <div class="section">
+      <h2><span class="num">*</span>マップ範囲</h2>
+      <div class="mode-toggle">
+        <label><input type="radio" name="bbox-mode" value="auto" checked> 自動（ルート中心）</label>
+        <label><input type="radio" name="bbox-mode" value="manual"> 手動指定</label>
+      </div>
+      <p class="hint" id="bbox-hint">
+        自動: ルートを中心に、形状と額縁に合わせ余裕をもって範囲を算出します。
+      </p>
+      <div id="manual-bbox-ctrl" class="hidden">
+        <button id="draw-bbox" type="button" style="width:100%">マップで範囲を描画</button>
+        <div id="bbox-status" class="draw-status" style="margin-top:0.4rem; display:none"></div>
+      </div>
+    </div>
+
+    <!-- 7. Generate -->
+    <div class="section">
+      <h2><span class="num">7</span>生成</h2>
+      <button id="generate" class="primary">モデルを生成</button>
+      <div id="progress" class="hidden">
+        <div class="bar"><div class="fill"></div></div>
+        <div class="step">待機中…</div>
+      </div>
+      <div id="result" class="hidden"></div>
+    </div>
+
+  </aside>
+
+  <section class="panel right">
+    <nav class="tabs">
+      <button class="tab active" type="button" data-tab="map">🗺 マップ入力</button>
+      <button class="tab" type="button" data-tab="preview" disabled>
+        🎨 3D プレビュー <span class="tab-badge hidden" id="preview-badge">NEW</span>
+      </button>
+    </nav>
+
+    <div class="tab-content">
+      <div class="tab-panel active" data-panel="map">
+        <div id="map"></div>
+        <div class="map-caption">ベース地図: © OpenStreetMap contributors</div>
+      </div>
+
+      <div class="tab-panel" data-panel="preview">
+        <div id="preview-host">
+          <canvas id="preview-canvas"></canvas>
+          <div id="preview-placeholder">
+            <div class="pv-icon">🎨</div>
+            <div>まだモデルが生成されていません</div>
+            <div class="pv-sub">左側で条件を指定し「モデルを生成」を押すと、ここに 3D プレビューが表示されます。</div>
+          </div>
+          <div id="preview-hud" class="hidden">
+            <span class="pv-stat" id="pv-stat-dist">—</span>
+            <span class="pv-stat" id="pv-stat-gain">—</span>
+            <span class="pv-stat" id="pv-stat-size">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  TerraTrail v0.3 · 標高: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">GSI</a> / <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank">AWS Terrain Tiles</a> · 地物: <a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a>
+</footer>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

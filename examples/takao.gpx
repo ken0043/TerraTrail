@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TerraTrail-sample" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Mt. Takao Sample</name>
+    <desc>Mount Takao loop - a test hike near Tokyo for TerraTrail.</desc>
+  </metadata>
+  <trk>
+    <name>Takao Loop</name>
+    <trkseg>
+      <trkpt lat="35.6251" lon="139.2679"><ele>200</ele></trkpt>
+      <trkpt lat="35.6253" lon="139.2690"><ele>220</ele></trkpt>
+      <trkpt lat="35.6257" lon="139.2700"><ele>250</ele></trkpt>
+      <trkpt lat="35.6262" lon="139.2710"><ele>290</ele></trkpt>
+      <trkpt lat="35.6266" lon="139.2720"><ele>340</ele></trkpt>
+      <trkpt lat="35.6270" lon="139.2730"><ele>400</ele></trkpt>
+      <trkpt lat="35.6274" lon="139.2740"><ele>470</ele></trkpt>
+      <trkpt lat="35.6275" lon="139.2752"><ele>530</ele></trkpt>
+      <trkpt lat="35.6272" lon="139.2765"><ele>580</ele></trkpt>
+      <trkpt lat="35.6265" lon="139.2773"><ele>599</ele></trkpt>
+      <trkpt lat="35.6258" lon="139.2768"><ele>560</ele></trkpt>
+      <trkpt lat="35.6250" lon="139.2760"><ele>480</ele></trkpt>
+      <trkpt lat="35.6245" lon="139.2748"><ele>400</ele></trkpt>
+      <trkpt lat="35.6242" lon="139.2732"><ele>330</ele></trkpt>
+      <trkpt lat="35.6241" lon="139.2715"><ele>270</ele></trkpt>
+      <trkpt lat="35.6243" lon="139.2700"><ele>230</ele></trkpt>
+      <trkpt lat="35.6247" lon="139.2688"><ele>210</ele></trkpt>
+      <trkpt lat="35.6251" lon="139.2679"><ele>200</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
